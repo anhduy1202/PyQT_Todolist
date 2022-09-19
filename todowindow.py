@@ -9,6 +9,7 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 import sqlite3
 
 # CREATE DATABASE INSTANCE
@@ -109,7 +110,11 @@ class Ui_MainWindow(object):
                       })
         db.commit()
         db.close()
-
+        msgBox = QMessageBox()
+        msgBox.setWindowTitle("Saved To Database")
+        msgBox.setText("Successfully saved")
+        msgBox.setIcon(QMessageBox.Information)
+        msgBox.exec_()
     def clearAll(self):
         self.mylist_listWidget.clear()
 
