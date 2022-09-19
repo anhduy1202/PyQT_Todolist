@@ -9,36 +9,57 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import sqlite3
 
+# CREATE DATABASE INSTANCE
+db = sqlite3.connect('todolist.db')
+c = db.cursor()
+c.execute("""CREATE TABLE if not exists todo_list(
+          list_item text
+          )""")
+db.commit()
+db.close()
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setEnabled(True)
-        MainWindow.resize(440, 375)
+        MainWindow.resize(582, 375)
         MainWindow.setAutoFillBackground(False)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+
         # ADD ITEM
         self.additem_pushButton = QtWidgets.QPushButton(self.centralwidget, clicked = lambda: self.addItem())
         self.additem_pushButton.setGeometry(QtCore.QRect(5, 50, 121, 41))
         self.additem_pushButton.setObjectName("additem_pushButton")
+
         # INPUT FIELD
         self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
-        self.lineEdit.setGeometry(QtCore.QRect(10, 10, 411, 31))
+        self.lineEdit.setGeometry(QtCore.QRect(10, 10, 561, 31))
         self.lineEdit.setObjectName("lineEdit")
+
         # LIST
         self.mylist_listWidget = QtWidgets.QListWidget(self.centralwidget)
-        self.mylist_listWidget.setGeometry(QtCore.QRect(10, 100, 411, 211))
+        self.mylist_listWidget.setGeometry(QtCore.QRect(10, 100, 561, 211))
         self.mylist_listWidget.setObjectName("mylist_listWidget")
+
         # DELETE ITEM
         self.deleteitem_pushButton_2 = QtWidgets.QPushButton(self.centralwidget, clicked = lambda: self.deleteItem())
         self.deleteitem_pushButton_2.setGeometry(QtCore.QRect(150, 50, 131, 41))
         self.deleteitem_pushButton_2.setObjectName("deleteitem_pushButton_2")
+
         # CLEAR ALL
         self.clearall_pushButton_3 = QtWidgets.QPushButton(self.centralwidget, clicked = lambda: self.clearAll())
         self.clearall_pushButton_3.setGeometry(QtCore.QRect(300, 50, 121, 41))
         self.clearall_pushButton_3.setObjectName("clearall_pushButton_3")
         MainWindow.setCentralWidget(self.centralwidget)
+
+        # SAVE TO DATABASE
+        self.save_pushButton_4 = QtWidgets.QPushButton(self.centralwidget, clicked = lambda: self.saveItem())
+        self.save_pushButton_4.setGeometry(QtCore.QRect(440, 50, 135, 41))
+        self.save_pushButton_4.setObjectName("save_pushButton_4")
+        MainWindow.setCentralWidget(self.centralwidget)
+
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 440, 24))
         self.menubar.setObjectName("menubar")
@@ -49,7 +70,18 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        # RETRIEVE DATA FROM DB
+        self.fetchData()
 
+    def fetchData(self):
+        db = sqlite3.connect('todolist.db')
+        c = db.cursor()
+        c.execute("""SELECT * FROM todo_list""")
+        records = c.fetchall()
+        db.commit()
+        db.close()
+        for record in records:
+            self.mylist_listWidget.addItem(str(record[0]))
 
     def addItem(self):
         item = self.lineEdit.text()
@@ -62,6 +94,22 @@ class Ui_MainWindow(object):
         # Delete selected row
         self.mylist_listWidget.takeItem(clickedId)
 
+    def saveItem(self):
+        items = []
+        db = sqlite3.connect('todolist.db')
+        c = db.cursor()
+        # Delete existing data so no overlap
+        c.execute("""DELETE FROM todo_list;""",)
+        for index in range(self.mylist_listWidget.count()):
+            items.append(self.mylist_listWidget.item(index))
+        for item in items:
+            c.execute("""INSERT INTO todo_list VALUES (:item)""",
+                      {
+                          'item': item.text()
+                      })
+        db.commit()
+        db.close()
+
     def clearAll(self):
         self.mylist_listWidget.clear()
 
@@ -72,3 +120,4 @@ class Ui_MainWindow(object):
         self.lineEdit.setPlaceholderText(_translate("MainWindow", "Type your items"))
         self.deleteitem_pushButton_2.setText(_translate("MainWindow", "Delete Items"))
         self.clearall_pushButton_3.setText(_translate("MainWindow", "Clear All"))
+        self.save_pushButton_4.setText(_translate("MainWindow", "Save to database"))
